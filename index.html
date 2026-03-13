@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>백호미트 - 프리미엄 축산물 유통 파트너</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* 프리미엄 라이트 테마 설정 */
+        :root {
+            --bg-main: #ffffff;
+            --bg-sub: #f8fafc; 
+            --bg-card: #ffffff;
+            --brand-red: #ef4444;
+            --text-main: #0f172a;
+            --text-sub: #334155;
+        }
+
+        body { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            background-color: var(--bg-main); 
+            color: var(--text-main);
+            scroll-behavior: smooth; 
+            overflow-x: hidden; 
+        }
+        
+        /* 페이지 전환 애니메이션 */
+        .page-view { display: none; min-height: 100vh; }
+        .page-view.active { display: block; animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 네비게이션 헤더 */
+        header { 
+            transition: all 0.4s ease; 
+            background-color: transparent; 
+            border-bottom: 1px solid transparent; 
+            color: var(--text-main);
+        }
+        header.scrolled, header.sub-page { 
+            background-color: rgba(255, 255, 255, 0.98); 
+            backdrop-filter: blur(15px);
+            padding: 0.8rem 0; 
+            box-shadow: 0 4px 30px rgba(0,0,0,0.08); 
+            border-bottom: 1px solid rgba(0,0,0,0.05); 
+            color: var(--text-main);
+        }
+
+        #mobile-menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.99);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: menuFade 0.3s ease;
+            color: var(--text-main);
+        }
+        @keyframes menuFade { from { opacity: 0; } to { opacity: 1; } }
+
+        /* KPI 카드 - 완벽한 중앙 정렬 디자인 */
+        .kpi-card { 
+            background: #ffffff; 
+            border: 1px solid rgba(0,0,0,0.05); 
+            border-radius: 2rem;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1); 
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            display: flex; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px; 
+        }
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0%;
+            height: 4px;
+            background: var(--brand-red);
+            transition: width 0.4s ease;
+        }
+        .kpi-card:hover { 
+            transform: translateY(-20px); 
+            box-shadow: 0 40px 80px rgba(0,0,0,0.1); 
+            border-color: rgba(239, 68, 68, 0.1);
+        }
+        .kpi-card:hover::after {
+            width: 100%;
+        }
+        
+        /* 제품 이미지 카드 */
+        .product-card { overflow: hidden; position: relative; border-radius: 1.5rem; cursor: pointer; transition: all 0.3s ease; background: #f1f5f9; }
+        .product-card img { transition: transform 0.6s ease; filter: brightness(1); }
+        .product-card:hover img { transform: scale(1.08); filter: brightness(0.9); }
+
+        /* 메인 BEST 5 스타일 */
+        .best-card { position: relative; border-radius: 2rem; overflow: hidden; transition: all 0.4s; background: white; border: 1px solid #f1f5f9; }
+        .best-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .rank-badge { position: absolute; top: 1rem; left: 1rem; width: 3rem; height: 3rem; background: var(--brand-red); color: white; display: flex; align-items: center; justify-content: center; border-radius: 1rem; font-weight: 900; font-size: 1.25rem; z-index: 10; box-shadow: 0 4px 10px rgba(239,68,68,0.3); }
+        
+        /* 히어로 슬라이더 및 텍스트 레이아웃 */
+        .hero-slider { position: relative; width: 100%; height: 85vh; overflow: hidden; background-color: #000; }
+        .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.5s ease-in-out, transform 10s linear; transform: scale(1.1); }
+        .slide.active { opacity: 1; z-index: 1; transform: scale(1); }
+        
+        /* 텍스트 가독성을 위한 슬라이드 오버레이 */
+        .slide::after { 
+            content: ''; 
+            position: absolute; 
+            inset: 0; 
+            background: linear-gradient(75deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 40%, rgba(255,255,255,0) 100%); 
+            z-index: 2;
+        }
+        
+        .slide-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+        .slide-content { 
+            position: relative; 
+            z-index: 10; 
+            height: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: flex-start; 
+            text-align: left; 
+            padding: 0 10%; 
+            opacity: 0; 
+            transform: translateX(-30px); 
+            transition: all 1s ease 0.5s; 
+        }
+        .slide.active .slide-content { opacity: 1; transform: translateX(0); }
+        .slide-content h1 { color: #0f172a; font-weight: 900; }
+        .slide-content p { color: #334155; }
+
+        /* 탭 메뉴 스타일 */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: slideUp 0.6s ease-out; }
+        .tab-btn { position: relative; padding: 1rem 2rem; color: #94a3b8; font-weight: 700; transition: all 0.3s; border-bottom: 2px solid transparent; white-space: nowrap; }
+        .tab-btn.active { color: var(--brand-red); border-bottom-color: var(--brand-red); }
+        
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn-oval-red { background-color: var(--brand-red); border-radius: 9999px; transition: all 0.3s; color: white; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+        .btn-oval-red:hover { background-color: #dc2626; transform: scale(1.05); box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3); }
+
+        .log-item { background: #ffffff; border: 1px solid rgba(0,0,0,0.06); border-radius: 2rem; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+        .log-item:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.08); }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .friendly-card { background: #fffafa; border: 1px solid rgba(239, 68, 68, 0.15); transition: all 0.3s; }
+        .friendly-card:hover { background: #fef2f2; transform: translateY(-5px); box-shadow: 0 10px 30px rgba(239, 68, 68, 0.05); }
+
+        .step-num { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 15px; background: var(--brand-red); color: white; font-weight: 900; margin: 0 auto 20px; }
+        
+        /* HACCP 인증 마크 스타일 */
+        .haccp-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #009245;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 900;
+            margin-left: 10px;
+            vertical-align: middle;
+            box-shadow: 0 2px 5px rgba(0, 146, 69, 0.3);
+        }
+
+        /* START A CONVERSATION 스타일 - 상단 배경과 맞춤 */
+        .light-cta-section {
+            background-color: var(--bg-sub);
+            color: var(--text-main);
+            padding: 100px 0;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        .cta-btn {
+            background-color: var(--brand-red);
+            color: #ffffff;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 1.25rem;
+            font-weight: 900;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
+        }
+        .cta-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(239, 68, 68, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header id="header" class="fixed w-full z-50 px-6 lg:px-8 py-6 lg:py-8 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer group" onclick="navigateTo('home')">
+                <div class="w-10 h-10 lg:w-12 lg:h-12 bg-red-500 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110">
+                    <svg class="w-6 h-6 lg:w-8 lg:h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2ZM12 15.27L8.27 17.15L12 8.03L15.73 17.15L12 15.27Z"/>
+                    </svg>
+                </div>
+                <div class="text-2xl lg:text-3xl font-black tracking-tighter uppercase text-slate-900">백호미트</div>
+            </div>
+            
+            <nav class="hidden lg:flex items-center space-x-6 font-bold text-[14px] tracking-tight uppercase">
+                <a href="javascript:void(0)" onclick="navigateTo('intro')" class="hover:text-red-500 transition-colors">백호미트 소개</a>
+                <a href="javascript:void(0)" onclick="navigateTo('products')" class="hover:text-red-500 transition-colors">제품소개</a>
+                <a href="javascript:void(0)" onclick="navigateTo('logs')" class="hover:text-red-500 transition-colors">작업일지</a>
+                <a href="javascript:void(0)" onclick="navigateTo('partnership')" class="hover:text-red-500 transition-colors">장사를 시작하신다면</a>
+                <a href="javascript:void(0)" onclick="navigateTo('process')" class="hover:text-red-500 transition-colors">거래방법</a>
+                <a href="javascript:void(0)" onclick="navigateTo('contact')" class="btn-oval-red px-8 py-3 shadow-lg">상담문의</a>
+            </nav>
+
+            <div class="lg:hidden text-3xl cursor-pointer p-2" onclick="toggleMobileMenu()">&#9776;</div>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay">
+        <div class="absolute top-6 right-6 text-4xl cursor-pointer" onclick="toggleMobileMenu()">&times;</div>
+        <nav class="flex flex-col items-center space-y-8 text-2xl font-black uppercase">
+            <a href="javascript:void(0)" onclick="navigateTo('intro'); toggleMobileMenu();">백호미트 소개</a>
+            <a href="javascript:void(0)" onclick="navigateTo('products'); toggleMobileMenu();">제품소개</a>
+            <a href="javascript:void(0)" onclick="navigateTo('logs'); toggleMobileMenu();">작업일지</a>
+            <a href="javascript:void(0)" onclick="navigateTo('partnership'); toggleMobileMenu();">장사를 시작하신다면</a>
+            <a href="javascript:void(0)" onclick="navigateTo('process'); toggleMobileMenu();">거래방법</a>
+            <a href="javascript:void(0)" onclick="navigateTo('contact'); toggleMobileMenu();" class="text-red-500">상담문의</a>
+        </nav>
+    </div>
+
+    <!-- [1] HOME PAGE -->
+    <main id="page-home" class="page-view active">
+        <!-- 메인 히어로 슬라이더 -->
+        <section class="hero-slider">
+            <div class="slide active">
+                <div class="slide-bg" style="background-image: url('https://images.unsplash.com/photo-1551028150-64b9f398f678?q=80&w=2000&auto=format&fit=crop')"></div>
+                <div class="slide-content">
+                    <div class="max-w-4xl">
+                        <h1 class="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 lg:mb-8 tracking-tighter uppercase">
+                            유통 거품을 걷고<br><span class="text-red-500">사장님의 이익</span>을 세웁니다
+                        </h1>
+                        <p class="text-sm md:text-xl lg:text-2xl font-medium max-w-2xl italic">
+                            산지 직송과 단순화된 공정으로 실현한 압도적 납품가.<br>백호미트가 파트너사에게 드리는 첫 번째 약속입니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide">
+                <div class="slide-bg" style="background-image: url('https://images.unsplash.com/photo-1603048588665-791ca8aea617?q=80&w=2000&auto=format&fit=crop')"></div>
+                <div class="slide-content">
+                    <div class="max-w-4xl">
+                        <h1 class="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 lg:mb-8 tracking-tighter uppercase">
+                            최고의 원육만을 향한<br><span class="text-red-500">백호의 고집</span>
+                        </h1>
+                        <p class="text-sm md:text-xl lg:text-2xl font-medium max-w-2xl italic">
+                            상위 1%만을 엄선하는 까다로운 선별 과정을 통과한<br>프리미엄 고기만이 사장님의 식탁에 오를 수 있습니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide">
+                <div class="slide-bg" style="background-image: url('https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2000&auto=format&fit=crop')"></div>
+                <div class="slide-content">
+                    <div class="max-w-4xl">
+                        <h1 class="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 lg:mb-8 tracking-tighter uppercase">
+                            철저한 위생 시스템으로<br><span class="text-red-500">완성하는 신선함</span>
+                        </h1>
+                        <p class="text-sm md:text-xl lg:text-2xl font-medium max-w-2xl italic">
+                            HACCP을 넘어선 백호만의 정밀 공정 시스템.<br>산지의 생생함을 사장님의 주방까지 안전하게 연결합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI & Stats Section (이전 수치로 복구) -->
+        <section class="py-24 lg:py-32 px-6 lg:-mt-40 relative z-20 bg-slate-50">
+            <div class="max-w-7xl mx-auto">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
+                    <!-- Stat 1: Partners -->
+                    <div class="kpi-card p-6 lg:p-10 text-center group">
+                        <div class="text-red-500 text-[11px] font-black tracking-[0.4em] uppercase mb-4">Partners</div>
+                        <div class="text-5xl lg:text-7xl font-black text-slate-900 mb-4 tracking-tighter">500+</div>
+                        <p class="text-slate-500 font-bold text-sm lg:text-base">함께하는 파트너</p>
+                    </div>
+                    <!-- Stat 2: Output -->
+                    <div class="kpi-card p-6 lg:p-10 text-center group">
+                        <div class="text-red-500 text-[11px] font-black tracking-[0.4em] uppercase mb-4">Output</div>
+                        <div class="text-5xl lg:text-7xl font-black text-slate-900 mb-4 tracking-tighter">1,200t</div>
+                        <p class="text-slate-500 font-bold text-sm lg:text-base">연간 가공량</p>
+                    </div>
+                    <!-- Stat 3: Delivery -->
+                    <div class="kpi-card p-6 lg:p-10 text-center group">
+                        <div class="text-red-500 text-[11px] font-black tracking-[0.4em] uppercase mb-4">Delivery</div>
+                        <div class="text-5xl lg:text-7xl font-black text-slate-900 mb-4 tracking-tighter">24h</div>
+                        <p class="text-slate-500 font-bold text-sm lg:text-base">신선 배송 시스템</p>
+                    </div>
+                    <!-- Stat 4: Growth -->
+                    <div class="kpi-card p-6 lg:p-10 text-center group">
+                        <div class="text-red-500 text-[11px] font-black tracking-[0.4em] uppercase mb-4">Growth</div>
+                        <div class="text-5xl lg:text-7xl font-black text-slate-900 mb-4 tracking-tighter">25%</div>
+                        <p class="text-slate-500 font-bold text-sm lg:text-base">매년 성장률</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 메인 BEST 5 상품 섹션 -->
+        <section class="py-24 bg-white px-6">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
+                    <div>
+                        <h2 class="text-red-500 font-black tracking-widest uppercase mb-4 text-xs">Premium Choice</h2>
+                        <h3 class="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight">백호미트 판매 <span class="text-red-500">BEST 5</span></h3>
+                    </div>
+                    <p class="text-slate-500 font-medium max-w-sm text-sm lg:text-base italic">가장 많은 파트너사들이 선택한 압도적 품질의 베스트 라인업입니다.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 lg:gap-8">
+                    <div class="best-card group">
+                        <div class="rank-badge">1</div>
+                        <div class="h-64 overflow-hidden"><img src="https://images.unsplash.com/photo-1603048588665-791ca8aea617?auto=format&fit=crop&w=600" class="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" alt="1++ 한우 등심"></div>
+                        <div class="p-6 text-center"><h4 class="text-lg font-bold text-slate-900 group-hover:text-red-500 transition-colors">1++ 한우 등심</h4></div>
+                    </div>
+                    <div class="best-card group">
+                        <div class="rank-badge">2</div>
+                        <div class="h-64 overflow-hidden"><img src="https://images.unsplash.com/photo-1602491673980-73aa38de027a?auto=format&fit=crop&w=600" class="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" alt="한돈 뼈 삼겹살"></div>
+                        <div class="p-6 text-center"><h4 class="text-lg font-bold text-slate-900 group-hover:text-red-500 transition-colors">한돈 뼈 삼겹살</h4></div>
+                    </div>
+                    <div class="best-card group">
+                        <div class="rank-badge">3</div>
+                        <div class="h-64 overflow-hidden"><img src="https://images.unsplash.com/photo-1593030103066-0093718efeb9?auto=format&fit=crop&w=600" class="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" alt="아그로수퍼 삼겹살"></div>
+                        <div class="p-6 text-center"><h4 class="text-lg font-bold text-slate-900 group-hover:text-red-500 transition-colors">아그로수퍼 삼겹살</h4></div>
+                    </div>
+                    <div class="best-card group">
+                        <div class="rank-badge">4</div>
+                        <div class="h-64 overflow-hidden"><img src="https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=600" class="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" alt="냉장 LA 갈비"></div>
+                        <div class="p-6 text-center"><h4 class="text-lg font-bold text-slate-900 group-hover:text-red-500 transition-colors">냉장 LA 갈비</h4></div>
+                    </div>
+                    <div class="best-card group">
+                        <div class="rank-badge">5</div>
+                        <div class="h-64 overflow-hidden"><img src="https://images.unsplash.com/photo-1558030006-45c675171f23?auto=format&fit=crop&w=600" class="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" alt="냉장 소갈비살"></div>
+                        <div class="p-6 text-center"><h4 class="text-lg font-bold text-slate-900 group-hover:text-red-500 transition-colors">냉장 소갈비살</h4></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- START A CONVERSATION Section (라이트 모드 테마 적용) -->
+        <section class="light-cta-section">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="mb-4">
+                    <span class="text-red-500 font-black tracking-widest uppercase text-sm">START A CONVERSATION</span>
+                </div>
+                <h2 class="text-3xl lg:text-5xl font-black leading-tight mb-8 text-slate-900">
+                    형식적인 서류보다는 따뜻한 대화가 먼저입니다.<br>
+                    파트너님이 꿈꾸는 장사 이야기를 편하게 들려주세요.
+                </h2>
+                <p class="text-slate-500 text-lg lg:text-xl font-medium max-w-3xl mb-12 italic">
+                    완벽한 조건이 아니어도 좋습니다. 고기를 다루는 사람으로서 나누는<br>
+                    진심 어린 고민이 새로운 비즈니스의 첫걸음이 됩니다.
+                </p>
+                <div class="flex flex-wrap gap-4">
+                    <a href="javascript:void(0)" onclick="navigateTo('contact')" class="cta-btn">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                        지금 상담 신청하기
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- [2] BAEKHO INTRO PAGE -->
+    <main id="page-intro" class="page-view pt-32 pb-24">
+        <div class="max-w-5xl mx-auto px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-red-500 font-black tracking-widest uppercase mb-4 text-xs lg:text-sm">Corporate Identity</h2>
+                <h3 class="text-3xl lg:text-6xl font-black mb-12 text-slate-900">백호미트 소개</h3>
+                <div class="flex justify-center space-x-6 lg:space-x-12 border-b border-gray-100 overflow-x-auto no-scrollbar">
+                    <button onclick="switchTab('intro', 'hist')" id="tab-intro-hist-btn" class="tab-btn active text-lg lg:text-xl">주요 연혁</button>
+                    <button onclick="switchTab('intro', 'greet')" id="tab-intro-greet-btn" class="tab-btn text-lg lg:text-xl">인사말</button>
+                </div>
+            </div>
+            
+            <!-- 연혁 섹션 -->
+            <div id="tab-intro-hist" class="tab-content active">
+                <div class="max-w-3xl mx-auto py-12 space-y-12">
+                    <div class="relative pl-10 border-l border-gray-100">
+                        <div class="absolute -left-[5px] top-2 w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                        <span class="text-red-500 font-black text-2xl">2022.01</span>
+                        <h5 class="text-xl font-bold mt-2 text-slate-900">(주)백호미트 법인 설립</h5>
+                        <p class="text-slate-700 mt-2">축산물 유통 및 가공 전문 법인 설립 (인천 남동구 수산동 45-6)</p>
+                    </div>
+                    <div class="relative pl-10 border-l border-gray-100">
+                        <div class="absolute -left-[5px] top-2 w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                        <span class="text-red-500 font-black text-2xl">2023.12</span>
+                        <h5 class="text-xl font-bold mt-2 text-slate-900">백호축산 가맹점 사업 개시</h5>
+                        <p class="text-slate-700 mt-2">정육 전문 프랜차이즈 '백호축산' 가맹 1호점 오픈</p>
+                    </div>
+                    <div class="relative pl-10 border-l border-gray-100">
+                        <div class="absolute -left-[5px] top-2 w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                        <span class="text-red-500 font-black text-2xl">2024.01</span>
+                        <h5 class="text-xl font-bold mt-2 text-slate-900">직영점 '백호 인천터미널 숯불구이' 개업</h5>
+                        <p class="text-slate-700 mt-2">백호 인천터미널 숯불구이 직영점 오픈</p>
+                    </div>
+                    <div class="relative pl-10 border-l border-gray-100">
+                        <div class="absolute -left-[5px] top-2 w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                        <span class="text-red-500 font-black text-2xl">2024.02</span>
+                        <h5 class="text-xl font-bold mt-2 text-slate-900">브랜드 특허권 취득</h5>
+                        <p class="text-slate-700 mt-2">백호미트 / 백호푸드 / 백호축산 / 백호정 특허 등록</p>
+                    </div>
+                    <div class="relative pl-10 border-l border-gray-100">
+                        <div class="absolute -left-[5px] top-2 w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                        <span class="text-red-500 font-black text-2xl">2024.11</span>
+                        <h5 class="text-xl font-bold mt-2 text-slate-900">(주)백호미트 회사이전</h5>
+                        <p class="text-slate-700 mt-2">사업 확장 및 물류 효율화를 위한 본사 이전 (인천광역시 서구 봉수대로 192-4)</p>
+                    </div>
+                    <div class="relative pl-10 border-l border-gray-100">
+                        <div class="absolute -left-[5px] top-2 w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                        <span class="text-red-500 font-black text-2xl">2024.12</span>
+                        <h5 class="text-xl font-bold mt-2 text-slate-900 flex items-center">
+                            HACCP 인증 획득
+                            <span class="haccp-badge">HACCP</span>
+                        </h5>
+                        <p class="text-slate-700 mt-2 font-medium">안전한 축산물 생산 관리를 위한 식품안전관리인증기준(HACCP) 도입 및 인증</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="tab-intro-greet" class="tab-content">
+                <div class="max-w-3xl mx-auto py-12 text-center">
+                    <h4 class="text-2xl lg:text-5xl font-black text-slate-900 leading-tight mb-12">"정직한 고기가 만드는<br><span class="text-red-500 italic">정직한 비즈니스</span>를 믿습니다."</h4>
+                    <p class="text-slate-700 text-lg lg:text-2xl leading-relaxed font-light italic">
+                        형식적인 수식어보다 철저한 위생 수치와 품질 데이터로 승부합니다.<br>
+                        백호미트는 파트너사의 성공을 위해 멈추지 않고 전진하겠습니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- [3] PRODUCTS PAGE -->
+    <main id="page-products" class="page-view pt-32 pb-24 bg-white text-slate-900">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="mb-12 lg:mb-16">
+                <h2 class="text-red-500 font-black tracking-widest uppercase mb-4 text-xs lg:text-sm">Product Portfolio</h2>
+                <h3 class="text-3xl lg:text-6xl font-black mb-8">백호미트 제품소개</h3>
+                <div class="flex space-x-4 border-b border-gray-100 overflow-x-auto no-scrollbar pb-2">
+                    <button onclick="switchTab('products', 'beef')" id="tab-products-beef-btn" class="tab-btn active text-lg">소 (Beef)</button>
+                    <button onclick="switchTab('products', 'pork')" id="tab-products-pork-btn" class="tab-btn text-lg">돼지 (Pork)</button>
+                    <button onclick="switchTab('products', 'gift')" id="tab-products-gift-btn" class="tab-btn text-lg">선물세트 (Gift)</button>
+                    <button onclick="switchTab('products', 'others')" id="tab-products-others-btn" class="tab-btn text-lg">기타 (Others)</button>
+                </div>
+            </div>
+
+            <div id="tab-products-beef" class="tab-content active">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1603048588665-791ca8aea617?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">1++ 프리미엄 한우 등심</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">상위 1%만을 선별한 백호의 시그니처 원육.</p>
+                        </div>
+                    </div>
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1593030103066-0093718efeb9?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">CAB 초이스 생갈비</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">풍부한 마블링과 고소한 육향의 최고급 부위.</p>
+                        </div>
+                    </div>
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">호주산 우둔 육회</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">청정 지역 호주에서 자란 고품격 부드러운 우둔.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-products-pork" class="tab-content">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1602491673980-73aa38de027a?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">명품 뼈 삼겹살</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">백호미트에서만 볼 수 있는 뼈가 붙어있는 삼겹.</p>
+                        </div>
+                    </div>
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">한돈 포갈비</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">숙련된 장인의 칼맛이 배어있는 냉장 한돈.</p>
+                        </div>
+                    </div>
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1607623814075-e512199b457c?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">수입 특수부위 항정살</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">아삭한 식감과 고소함이 일품인 별미 부위.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-products-gift" class="tab-content">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1546241072-48010ad28c2c?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">백호 시그니처 한우 구이 세트</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">감사의 마음을 전하는 1++ NO.9 한우 명품 세트.</p>
+                        </div>
+                    </div>
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1529692236671-f1f6e9481bfa?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">실속형 백호 한우 혼합세트</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">가성비 1++ NO.9 한우 세트.</p>
+                        </div>
+                    </div>
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1558030006-45c675171f23?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">백호 한돈 모듬 세트</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">삼겹살 부터 등갈비까지 모두 들어있는 세트.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-products-others" class="tab-content">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">사골 및 우족, 소꼬리 보신 세트</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">진한 국물을 위한 엄선된 한우 뼈 모둠.</p>
+                        </div>
+                    </div>
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">양념 돼지갈비</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">백호만의 비법 양념으로 재운 돼지갈비.</p>
+                        </div>
+                    </div>
+                    <div class="product-card group h-[400px]">
+                        <img src="https://images.unsplash.com/photo-1594179047519-f347310d3322?auto=format&fit=crop&w=800" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 p-8 flex flex-col justify-end">
+                            <h4 class="text-xl lg:text-2xl font-bold text-slate-900">감자탕용 돼지 목뼈</h4>
+                            <p class="text-slate-800 text-sm mt-2 font-medium">업소에서 사용 하는 감자탕용 목뼈.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- [4] LOGS PAGE -->
+    <main id="page-logs" class="page-view pt-32 pb-24 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-red-500 font-black tracking-widest uppercase mb-4 text-xs lg:text-sm">Daily Operations</h2>
+                <h3 class="text-3xl lg:text-6xl font-black text-slate-900">현장 작업일지</h3>
+                <p class="text-slate-600 mt-4 font-medium italic">백호미트의 품질 타협 없는 엄격한 가공 공정을 기록합니다.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+                <div class="log-item flex flex-col sm:flex-row gap-6 p-6">
+                    <div class="sm:w-40 lg:w-48 h-40 lg:h-48 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=400" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-xl lg:text-2xl font-bold mb-3 text-slate-900">정밀 슬라이스 가공</h4>
+                        <p class="text-slate-700 text-sm leading-relaxed">원육의 선도를 보존하기 위해 -2℃의 미세 동결 상태에서 가공하며, 샤브샤브나 불고기 용도에 따라 0.1mm 단위의 정밀한 두께 조절을 실현합니다.</p>
+                    </div>
+                </div>
+                <div class="log-item flex flex-col sm:flex-row gap-6 p-6">
+                    <div class="sm:w-40 lg:w-48 h-40 lg:h-48 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1583267746897-2cf415888172?auto=format&fit=crop&w=400" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-xl lg:text-2xl font-bold mb-3 text-slate-900">갈비 수작업 포 작업</h4>
+                        <p class="text-slate-700 text-sm leading-relaxed">기계가 닿지 못하는 미세한 근막과 불필요한 지방을 숙련된 베테랑 장인이 직접 제거합니다. 구워냈을 때 최상의 육즙과 식감을 보장하는 핵심 공정입니다.</p>
+                    </div>
+                </div>
+                <div class="log-item flex flex-col sm:flex-row gap-6 p-6">
+                    <div class="sm:w-40 lg:w-48 h-40 lg:h-48 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1603048588665-791ca8aea617?auto=format&fit=crop&w=400" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-xl lg:text-2xl font-bold mb-3 text-slate-900">골절기 사용 공정</h4>
+                        <p class="text-slate-700 text-sm leading-relaxed">LA갈비 등 골격 부위 가공 시, 최첨단 골절기를 활용해 단면을 매끄럽게 절단합니다. 3단계 고압 세척으로 미세 뼛가루를 완벽히 제거합니다.</p>
+                    </div>
+                </div>
+                <div class="log-item flex flex-col sm:flex-row gap-6 p-6">
+                    <div class="sm:w-40 lg:w-48 h-40 lg:h-48 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1555664424-778a1e5e1b48?auto=format&fit=crop&w=400" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-xl lg:text-2xl font-bold mb-3 text-slate-900">금속 검출기 정밀 검수</h4>
+                        <p class="text-slate-700 text-sm leading-relaxed">HACCP 기준에 따라 가공 완료된 모든 제품은 최신형 금속 검출기를 통과합니다. 육안으로 확인하기 힘든 미세한 금속 이물질까지 완벽하게 차단하여 안전성을 보장합니다.</p>
+                    </div>
+                </div>
+                <div class="log-item flex flex-col sm:flex-row gap-6 p-6">
+                    <div class="sm:w-40 lg:w-48 h-40 lg:h-48 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=400" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-xl lg:text-2xl font-bold mb-3 text-slate-900">신선도 유지 소포장</h4>
+                        <p class="text-slate-700 text-sm leading-relaxed">가공 즉시 특수 진공 포장 공법을 적용하여 미생물 번식을 차단합니다. 파트너사가 즉시 조리할 수 있는 최상의 컨디션을 유지합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- [5] PARTNERSHIP PAGE -->
+    <main id="page-partnership" class="page-view pt-32 pb-24 bg-white">
+        <div class="max-w-6xl mx-auto px-6 lg:px-8">
+            <div class="text-center mb-16 lg:mb-20">
+                <h2 class="text-red-500 font-black tracking-widest uppercase mb-4 italic text-xs">Business Concierge</h2>
+                <h3 class="text-3xl lg:text-6xl font-black mb-8 leading-tight tracking-tight text-slate-900">장사의 시작, 고기라는 문턱을<br><span class="text-red-500">가장 낮고 부드럽게.</span></h3>
+                <p class="text-slate-800 text-base lg:text-xl font-medium max-w-4xl mx-auto leading-relaxed">어려운 부위 공부와 복잡한 지식은 전문가인 저희에게 맡기세요. 사장님의 열정만 있다면, <br><span class="text-slate-950 font-black border-b-2 border-red-500/30">우리 가게 메뉴</span>에 꼭 맞는 답을 백호미트가 제안해 드립니다.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-20">
+                <div class="friendly-card p-10 rounded-[3rem] text-center">
+                    <div class="text-4xl mb-6">🎙️</div>
+                    <h4 class="text-xl lg:text-2xl font-bold mb-4 text-slate-900">편하게 물어보세요</h4>
+                    <p class="text-slate-800 text-sm leading-relaxed font-normal">어려운 전문 용어 대신 사장님의 상황에 맞춰 알기 쉽게 상담해 드립니다. <span class="text-slate-900 font-bold">"구이용, 국거리"</span> 처럼 용도만 편하게 말씀해 주세요.</p>
+                </div>
+                <div class="friendly-card p-10 rounded-[3rem] text-center">
+                    <div class="text-4xl mb-6">🤝</div>
+                    <h4 class="text-xl lg:text-2xl font-bold mb-4 text-slate-900">함께 고민하는 파트너</h4>
+                    <p class="text-slate-800 text-sm leading-relaxed font-normal">매장 상권과 메뉴 구성까지 사장님 입장에서 같이 고민합니다. 단순히 고기를 파는 것이 아니라 사장님의 든든한 조력자가 되어 드릴게요.</p>
+                </div>
+                <div class="friendly-card p-10 rounded-[3rem] text-center">
+                    <div class="text-4xl mb-6">✂️</div>
+                    <h4 class="text-xl lg:text-2xl font-bold mb-4 text-slate-900">주방 일손을 덜어드려요</h4>
+                    <p class="text-slate-800 text-sm leading-relaxed font-normal">칼질하고 손질하는 수고, 저희가 다 할게요. 매장에서 바로 불 위에 올릴 수 있는 <span class="text-slate-900 font-bold">정밀 세절 시스템</span>으로 사장님의 소중한 시간을 아껴 드립니다.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- [6] PROCESS PAGE -->
+    <main id="page-process" class="page-view pt-32 pb-24 text-center bg-slate-50">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <h2 class="text-red-500 font-black tracking-widest uppercase mb-4 text-xs">Trade Method</h2>
+            <h3 class="text-3xl lg:text-6xl font-black mb-16 lg:mb-20 tracking-tight text-slate-900">투명한 거래 절차</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+                <div class="bg-white p-10 rounded-[2.5rem] border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <div class="step-num text-xl font-black">01</div>
+                    <h4 class="text-xl font-bold mb-4 text-slate-900">상담 및 제안</h4>
+                    <p class="text-slate-800 text-sm font-medium leading-relaxed">비즈니스 형태와 상권에 최적화된 원육군을 제안하고, 파트너사를 위한 맞춤 견적을 산출합니다.</p>
+                </div>
+                <div class="bg-white p-10 rounded-[2.5rem] border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <div class="step-num text-xl font-black">02</div>
+                    <h4 class="text-xl font-bold mb-4 text-slate-900">샘플 테스트</h4>
+                    <p class="text-slate-800 text-sm font-medium leading-relaxed">제안된 원육 품질을 직접 확인하며, 주방 환경에 맞춘 세절 두께와 포장 단위를 조율합니다.</p>
+                </div>
+                <div class="bg-white p-10 rounded-[2.5rem] border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <div class="step-num text-xl font-black">03</div>
+                    <h4 class="text-xl font-bold mb-4 text-slate-900">맞춤 가공 생산</h4>
+                    <p class="text-slate-800 text-sm font-medium leading-relaxed">확정된 사양에 따라 전문 인력이 가공을 시작하며, 엄격한 HACCP 기준 아래 위생적으로 생산합니다.</p>
+                </div>
+                <div class="bg-white p-10 rounded-[2.5rem] border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <div class="step-num text-xl font-black">04</div>
+                    <h4 class="text-xl font-bold mb-4 text-slate-900">콜드체인 직배송</h4>
+                    <p class="text-slate-800 text-sm font-medium leading-relaxed">최적의 온도 관리 시스템을 통해 주문하신 원육을 매장 앞까지 안전하고 빠르게 배송합니다.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- [7] CONTACT PAGE -->
+    <main id="page-contact" class="page-view pt-32 pb-24">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="text-center mb-16"><h3 class="text-3xl lg:text-6xl font-black mb-8 text-slate-900">상담문의</h3></div>
+            <div class="bg-slate-50 p-8 lg:p-12 rounded-[2rem] border border-gray-100">
+                <form class="space-y-6" onsubmit="return false">
+                    <input type="text" placeholder="업체명/성함" class="w-full bg-white border border-gray-200 p-5 rounded-2xl outline-none focus:ring-2 focus:ring-red-500 text-slate-900">
+                    <input type="tel" placeholder="연락처" class="w-full bg-white border border-gray-200 p-5 rounded-2xl outline-none focus:ring-2 focus:ring-red-500 text-slate-900">
+                    <textarea placeholder="문의내용을 입력해주세요" class="w-full min-h-[150px] bg-white border border-gray-200 p-5 rounded-2xl outline-none focus:ring-2 focus:ring-red-500 text-slate-900"></textarea>
+                    <button class="w-full py-6 bg-red-600 rounded-2xl font-black text-xl text-white hover:bg-red-700 transition-all">상담 신청하기</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-slate-50 text-slate-900 py-16 px-6 lg:px-8 border-t border-gray-100">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end">
+            <div>
+                <div class="flex items-center space-x-3 mb-8">
+                    <div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center text-white">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2ZM12 15.27L8.27 17.15L12 8.03L15.73 17.15L12 15.27Z"/>
+                        </svg>
+                    </div>
+                    <div class="text-3xl font-black tracking-tighter uppercase text-slate-900">백호미트</div>
+                </div>
+                <div class="text-slate-600 text-xs lg:text-sm space-y-2 font-medium">
+                    <p>대표이사 : 홍길동  |  사업자등록번호 : 000-00-00000</p>
+                    <p>인천광역시 서구 봉수대로 192-4 (주)백호미트</p>
+                    <p>T. 02-0000-0000  |  E. info@baekho-meat.com</p>
+                </div>
+            </div>
+            <div class="mt-12 md:mt-0 text-gray-500 text-[10px] tracking-[0.3em] uppercase font-bold">&copy; 2024 백호미트. ALL RIGHTS RESERVED.</div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMobileMenu() {
+            const overlay = document.getElementById('mobile-menu-overlay');
+            overlay.style.display = (overlay.style.display === 'flex') ? 'none' : 'flex';
+            document.body.style.overflow = (overlay.style.display === 'flex') ? 'hidden' : '';
+        }
+
+        function navigateTo(pageId) {
+            document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById('page-' + pageId);
+            if(target) target.classList.add('active');
+            const header = document.getElementById('header');
+            if (pageId === 'home') header.classList.remove('sub-page');
+            else header.classList.add('sub-page');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function switchTab(pageType, tabId) {
+            const contentSelector = `[id^="tab-${pageType}-"]`;
+            const buttonSelector = `[id^="tab-${pageType}-"][id$="-btn"]`;
+            document.querySelectorAll(contentSelector).forEach(c => { if(!c.id.endsWith('-btn')) c.classList.remove('active'); });
+            document.querySelectorAll(buttonSelector).forEach(b => b.classList.remove('active'));
+            const targetContent = document.getElementById(`tab-${pageType}-${tabId}`);
+            const targetButton = document.getElementById(`tab-${pageType}-${tabId}-btn`);
+            if(targetContent) targetContent.classList.add('active');
+            if(targetButton) {
+                targetButton.classList.add('active');
+                targetButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+                header.classList.remove('py-6', 'lg:py-8');
+                header.classList.add('py-4');
+            } else {
+                header.classList.remove('scrolled', 'py-4');
+                header.classList.add('py-6', 'lg:py-8');
+            }
+        });
+
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        function rotateHero() {
+            if(slides.length === 0) return;
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }
+        setInterval(rotateHero, 6000);
+    </script>
+</body>
+</html>
